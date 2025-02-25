@@ -22,7 +22,7 @@ class TetrisGameScene : public Scene
 {
 public:
     TetrisGameScene();
-    virtual ~TetrisGameScene() = default;
+    virtual ~TetrisGameScene();
 
     // Geerbt über Scene
     void fixed_update( double deltaTime ) override;
@@ -30,6 +30,7 @@ public:
     bool handle_event( SDL_Event* pEvent ) override;
 
     void create_playingfield( uint16_t width = 10, uint16_t height = 20, uint16_t spawnAreaHeight = 4 );
+    void destroy_playingfield();
 
     uint16_t get_playingfield_width_in_elements() const;     // Width of GameField
     uint16_t get_playingfield_height_in_elements() const;    // Height of GameField + Spawnarea
@@ -40,8 +41,9 @@ public:
     bool check_collision( Direction dir ) const;
 
 private:
-    FieldElement* m_gameField  = nullptr;    // represents the playing field with all static pieces (not the currently active one)
-    uint16_t      m_fieldWidth = 0, m_fieldHeight = 0;
+    FieldElement* m_gameField       = nullptr;    // represents the playing field with all static pieces (not the currently active one)
+    uint16_t      m_fieldWidth      = 0;
+    uint16_t      m_fieldHeight     = 0;
     uint16_t      m_spawnAreaHeight = 0;
     uint16_t      m_borderThickness = 1;
 
@@ -54,6 +56,7 @@ private:
     bool m_keyDown_A = false;
     bool m_keyDown_S = false;
     bool m_keyDown_D = false;
+    bool m_keyDown_R = false;
 
     AssetView<Sprite> m_tileSprite;
 };

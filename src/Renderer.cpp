@@ -259,17 +259,17 @@ void GPURenderer::retrieve_shaderformatinfo()
 {
     SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats( m_sdlGPUDevice );
     if ( backendFormats & SDL_GPU_SHADERFORMAT_SPIRV ) {
-        m_shaderFormat.SubDirectory      = "SPIRV/";
+        m_shaderFormat.SubDirectory      = "SPIRV";
         m_shaderFormat.Format            = SDL_GPU_SHADERFORMAT_SPIRV;
         m_shaderFormat.EntryPoint        = "main";
         m_shaderFormat.FileNameExtension = ".spv";
     } else if ( backendFormats & SDL_GPU_SHADERFORMAT_MSL ) {
-        m_shaderFormat.SubDirectory      = "MSL/";
+        m_shaderFormat.SubDirectory      = "MSL";
         m_shaderFormat.Format            = SDL_GPU_SHADERFORMAT_MSL;
         m_shaderFormat.EntryPoint        = "main0";
         m_shaderFormat.FileNameExtension = ".msl";
     } else if ( backendFormats & SDL_GPU_SHADERFORMAT_DXIL ) {
-        m_shaderFormat.SubDirectory      = "DXIL/";
+        m_shaderFormat.SubDirectory      = "DXIL";
         m_shaderFormat.Format            = SDL_GPU_SHADERFORMAT_DXIL;
         m_shaderFormat.EntryPoint        = "main";
         m_shaderFormat.FileNameExtension = ".dxil";

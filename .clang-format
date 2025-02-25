@@ -34,7 +34,7 @@ BraceWrapping:
   AfterNamespace : true
   AfterUnion : true
   AfterExternBlock : true
-  BeforeElse : false
+  BeforeElse : true
   BeforeCatch : false
   BeforeLambdaBody : false
   BeforeWhile : false

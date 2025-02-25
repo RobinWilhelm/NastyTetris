@@ -3,6 +3,7 @@
 
 #include "CoreAPI.h"
 
+#include "Application.h"
 #include "Renderer.h"
 #include "Sprite2DPipeline.h"
 #include "AssetManager.h"
@@ -22,12 +23,22 @@ TetrisGameScene::TetrisGameScene()
     create_playingfield( 10, 20 );
 }
 
+TetrisGameScene::~TetrisGameScene()
+{
+    destroy_playingfield();
+}
+
 void TetrisGameScene::create_playingfield( uint16_t width, uint16_t height, uint16_t spawnAreaHeight )
 {
     m_gameField       = new FieldElement[width * ( height + spawnAreaHeight /* spawnarea for the active pieces */ )];
     m_spawnAreaHeight = spawnAreaHeight;
     m_fieldWidth      = width;
     m_fieldHeight     = height;
+}
+
+void TetrisGameScene::destroy_playingfield()
+{
+    delete[] m_gameField;
 }
 
 uint16_t TetrisGameScene::get_playingfield_width_in_elements() const
@@ -93,6 +104,11 @@ void TetrisGameScene::fixed_update( double deltaTime )
 {
     // handle player input
     if ( m_activeTetromino != nullptr ) {
+        if ( m_keyDown_R ) {
+            m_activeTetromino->rotate_once();
+            m_keyDown_R = false;
+        }
+
         if ( m_keyDown_A && !check_collision( Direction::Left ) ) {
             m_activeTetromino->move_one( Direction::Left );
             m_keyDown_A = false;
@@ -113,22 +129,50 @@ void TetrisGameScene::fixed_update( double deltaTime )
     if ( m_nextTetrominoActionTime <= 0.0 ) {
         if ( m_activeTetromino == nullptr ) {
             // TODO create new random
-            TetrominoType newType = TetrominoType::O;
-            m_activeTetromino     = std::make_unique<Tetromino>( newType, Orientation::Up, static_cast<uint16_t>( get_playingfield_width_in_elements() / 2 - 1 ), static_cast<uint16_t>( 0 ) );
-        } else {
+            TetrominoType newType = static_cast<TetrominoType>( m_tetrominoDistribution( m_rngEngine ) );
+            m_activeTetromino     = std::make_unique<Tetromino>( newType, Orientation::Up, static_cast<uint16_t>( get_playingfield_width_in_elements() / 2 - 1 ), static_cast<uint16_t>( 1 ) );
+        }
+        else {
             // fuse tetromino to the playing field if we collided
             if ( check_collision( Direction::Down ) ) {
                 for ( const Element& elem : m_activeTetromino->get_structure().Elements ) {
                     FieldElement& fieldElem = m_gameField[( elem.y * get_playingfield_width_in_elements() ) + elem.x];
                     fieldElem.Active        = true;
                     fieldElem.Color         = Tetromino::get_color( m_activeTetromino->get_type() );
+
+                    // check if we lost by checking if the tetromino got partially fused into the spawnarea
+                    if ( elem.y < m_spawnAreaHeight ) {
+                        // TODO: show some proper end game screen
+                        CoreAPI::get_application()->shutdown();
+                    }
                 }
 
                 // delete the active tetromino after collision so a new one can be created
                 m_activeTetromino.reset();
 
-                // TODO: check here if we completed a row
-            } else {
+                // check here if we completed a row
+                for ( int y = m_spawnAreaHeight; y < get_playingfield_height_in_elements(); ++y ) {
+                    bool completedRow = true;
+                    for ( int x = 0; x < m_fieldWidth; ++x ) {
+                        if ( m_gameField[( y * get_playingfield_width_in_elements() ) + x].Active == false ) {
+                            completedRow = false;
+                            break;
+                        }
+                    }
+                    if ( completedRow ) {
+                        // loop over row again and deactivate it
+                        for ( int x = 0; x < m_fieldWidth; ++x ) {
+                            m_gameField[( y * get_playingfield_width_in_elements() ) + x].Active = false;
+                        }
+
+                        // move all rows above down by one
+                        for ( int abov = m_spawnAreaHeight; y < get_playingfield_height_in_elements(); ++y ) { }
+
+                        // TODO: player should got some points here
+                    }
+                }
+            }
+            else {
                 m_activeTetromino->move_one( Direction::Down );
             }
         }
@@ -144,41 +188,35 @@ void TetrisGameScene::interpolate_and_create_rendercommands( float factor, GPURe
 
     const std::shared_ptr<Sprite> sprite = m_tileSprite.get();
 
- 
     // render playing field borders
-    DXSM::Color borderColorModifier{ 0.8f, 0.8f, 0.8f, 1.0f };
-    for (int x = 1; x < get_total_width_in_elements() - 1; x++)
-    {
-        sprite->render(static_cast<float>(x * m_tileSprite.get()->get_width()), 0.0f, borderColorModifier);
-        sprite->render(static_cast<float>(x * m_tileSprite.get()->get_width()), static_cast<float>((get_total_height_in_elements() - 1) * m_tileSprite.get()->get_height()), borderColorModifier);
+    DXSM::Color borderColorModifier { 0.8f, 0.8f, 0.8f, 1.0f };
+    for ( int x = 1; x < get_total_width_in_elements() - 1; x++ ) {
+        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), 0.0f, borderColorModifier );
+        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), static_cast<float>( ( get_total_height_in_elements() - 1 ) * m_tileSprite.get()->get_height() ),
+                        borderColorModifier );
     }
 
-    for (int y = 0; y < get_total_height_in_elements(); y++)
-    {
-        sprite->render(0.0f, static_cast<float>(y * m_tileSprite.get()->get_height()), borderColorModifier);
-        sprite->render(static_cast<float>((get_total_width_in_elements() - 1) * m_tileSprite.get()->get_width()), static_cast<float>(y * m_tileSprite.get()->get_height()), borderColorModifier);
+    for ( int y = 0; y < get_total_height_in_elements(); y++ ) {
+        sprite->render( 0.0f, static_cast<float>( y * m_tileSprite.get()->get_height() ), borderColorModifier );
+        sprite->render( static_cast<float>( ( get_total_width_in_elements() - 1 ) * m_tileSprite.get()->get_width() ), static_cast<float>( y * m_tileSprite.get()->get_height() ),
+                        borderColorModifier );
     }
 
     // render static elements
-    for (int y = 0; y < get_playingfield_height_in_elements(); y++)
-    {
-        for (int x = 0; x < get_playingfield_width_in_elements(); x++)
-        {
-            if (m_gameField[y * get_playingfield_width_in_elements() + x].Active)
-            {
-                sprite->render(static_cast<float>((x + m_borderThickness) * m_tileSprite.get()->get_width()), static_cast<float>((y + m_borderThickness) * m_tileSprite.get()->get_height()),
-                               m_gameField[y * get_playingfield_width_in_elements() + x].Color);
+    for ( int y = 0; y < get_playingfield_height_in_elements(); y++ ) {
+        for ( int x = 0; x < get_playingfield_width_in_elements(); x++ ) {
+            if ( m_gameField[y * get_playingfield_width_in_elements() + x].Active ) {
+                sprite->render( static_cast<float>( ( x + m_borderThickness ) * m_tileSprite.get()->get_width() ), static_cast<float>( ( y + m_borderThickness ) * m_tileSprite.get()->get_height() ),
+                                m_gameField[y * get_playingfield_width_in_elements() + x].Color );
             }
         }
     }
 
     // render dynamic elements
-    if (m_activeTetromino)
-    {
-        for (const Element& elem : m_activeTetromino->get_structure().Elements)
-        {
-            sprite->render(static_cast<float>((elem.x + m_borderThickness) * m_tileSprite.get()->get_width()), static_cast<float>((elem.y + m_borderThickness) * m_tileSprite.get()->get_height()),
-                           Tetromino::get_color(m_activeTetromino->get_type()));
+    if ( m_activeTetromino ) {
+        for ( const Element& elem : m_activeTetromino->get_structure().Elements ) {
+            sprite->render( static_cast<float>( ( elem.x + m_borderThickness ) * m_tileSprite.get()->get_width() ),
+                            static_cast<float>( ( elem.y + m_borderThickness ) * m_tileSprite.get()->get_height() ), Tetromino::get_color( m_activeTetromino->get_type() ) );
         }
     }
 }
@@ -195,6 +233,8 @@ bool TetrisGameScene::handle_event( SDL_Event* pEvent )
             m_keyDown_S = pEvent->key.down;
         if ( pEvent->key.scancode == SDL_SCANCODE_D )
             m_keyDown_D = pEvent->key.down;
+        if ( pEvent->key.scancode == SDL_SCANCODE_R )
+            m_keyDown_R = pEvent->key.down;
         break;
     }
     }

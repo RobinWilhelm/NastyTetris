@@ -105,7 +105,9 @@ bool Application::handle_event( SDL_Event* event )
         return m_scene->handle_event( event );
 }
 
-void Application::shutdown() { }
+void Application::shutdown() {
+    m_mustQuit.store(true, std::memory_order_relaxed);
+}
 
 void Application::set_simulation_target_frequency( uint16_t updatesPerSecond )
 {

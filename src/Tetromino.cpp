@@ -34,18 +34,32 @@ void Tetromino::move_one( Direction orientation )
         }
         case Direction::Right:
             elem.x += 1;
-            m_y += 1;
             break;
         case Direction::Down:
             elem.y += 1;
-            m_x += 1;
             break;
         case Direction::Left:
             elem.x -= 1;
-            m_y -= 1;
             break;
         default: break;
         }
+    }
+    switch (orientation)
+    {
+        case Direction::Up:
+        {
+            IE_ASSERT("Doesnt work this way!");
+            break;
+        }
+        case Direction::Down:
+            m_y += 1;
+            break;
+        case Direction::Left:
+            m_x -= 1;
+            break;
+        case Direction::Right:
+            m_x += 1;
+            break;
     }
 }
 
@@ -72,6 +86,7 @@ const Structure& Tetromino::get_structure()
 
 Structure Tetromino::get_prototype_structure( TetrominoType type, Orientation orientation )
 {
+    // https://tetris.fandom.com/wiki/Orientation
     switch ( type ) {
     case TetrominoType::O: return { { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } } };
     case TetrominoType::I:
@@ -85,41 +100,41 @@ Structure Tetromino::get_prototype_structure( TetrominoType type, Orientation or
     case TetrominoType::T:
         switch ( orientation ) {
         case Orientation::Up: return { { { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, 0 } } };
-        case Orientation::Right: return { { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 1 } } };
+        case Orientation::Right: return { { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 0 } } };
         case Orientation::Down: return { { { -1, 0 }, { 0, 0 }, { 0, 1 }, { 1, 0 } } };
         case Orientation::Left: return { { { 0, -1 }, { 0, 0 }, { -1, 0 }, { 0, 1 } } };
         }
         break;
     case TetrominoType::S:
         switch ( orientation ) {
-        case Orientation::Up: break;
-        case Orientation::Right: break;
-        case Orientation::Down: break;
-        case Orientation::Left: break;
+            case Orientation::Up: return {{ { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, 1 } }};
+            case Orientation::Right: return {{ { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 1 } }};
+            case Orientation::Down: return {{ { -1, 1 }, { 0, 0 }, { 0, 1 }, { 1, 0 } }};
+            case Orientation::Left: return {{ { -1, -1 }, { 0, 0 }, { -1, 0 }, { 0, 1 } }};
         }
         break;
     case TetrominoType::Z:
         switch ( orientation ) {
-        case Orientation::Up: break;
-        case Orientation::Right: break;
-        case Orientation::Down: break;
-        case Orientation::Left: break;
+            case Orientation::Up: return {{ { -1, -1 }, { 0, 0 }, { 0, -1 }, { 1, 0 } }};
+            case Orientation::Right: return {{ { 1, -1 }, { 0, 0 }, { 0, 1 }, { 1, 0 } }};
+            case Orientation::Down: return {{ { -1, 0 }, { 0, 0 }, { 0, 1 }, { 1, 1 } }};
+            case Orientation::Left: return {{ { 0, -1 }, { 0, 0 }, { -1, 0 }, { -1, 1 } }};
         }
         break;
     case TetrominoType::L:
         switch ( orientation ) {
-        case Orientation::Up: break;
-        case Orientation::Right: break;
-        case Orientation::Down: break;
-        case Orientation::Left: break;
+            case Orientation::Up: return {{ { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, -1 } }};
+            case Orientation::Right: return {{ { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, -1 } }};
+            case Orientation::Down: return {{ { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, 1 } }};
+            case Orientation::Left: return {{ { 0, -1 }, { 0, 0 }, { 0, 1 }, { -1, 1 } }};
         }
         break;
     case TetrominoType::J:
         switch ( orientation ) {
-        case Orientation::Up: break;
-        case Orientation::Right: break;
-        case Orientation::Down: break;
-        case Orientation::Left: break;
+            case Orientation::Up: return {{ { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, 1 } }};
+            case Orientation::Right: return {{ { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 1 } }};
+            case Orientation::Down: return {{ { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, 1 } }};
+            case Orientation::Left: return {{ { 0, -1 }, { 0, 0 }, { 0, 1 }, { -1, -1 } }};
         }
         break;
     default: break;
