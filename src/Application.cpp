@@ -30,7 +30,7 @@ bool Application::create()
 
     // create the core systems
     try {
-        auto windowOpt = Window::create( { "Nasty Tetris", 480, 1040, 0 } );
+        auto windowOpt = Window::create( { "Nasty Tetris", 720, 1040, 0 } );
         m_window       = std::move( windowOpt.value() );
 
         auto renderOpt = GPURenderer::create( m_window.get(), false );
@@ -44,7 +44,7 @@ bool Application::create()
         auto shaderFormat = m_renderer->get_needed_shaderformat();
         m_assetManager->add_repository<Shader>( "Shaders" / shaderFormat.SubDirectory );
 
-        m_camera = OrthographicCamera::create( 0, 480, 1040, 0 );
+        m_camera = OrthographicCamera::create( 0, 720, 1040, 0 );
 
         publish_coreapi();
     } catch ( std::exception e ) {

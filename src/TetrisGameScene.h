@@ -40,6 +40,14 @@ public:
     void create_playingfield( uint16_t width = 10, uint16_t height = 20, uint16_t spawnAreaHeight = 4 );
     void destroy_playingfield();
 
+    void process_input();
+    void create_random_tetromino();
+    void fuse_to_field();
+    void check_row_completion();
+    void update_fallout_effect( double deltaTime );
+
+    void render_field();    // render the static parts
+
     int get_field_width() const;     // Width of GameField in elements
     int get_field_height() const;    // Height of GameField + Spawnarea in elements
 
@@ -62,6 +70,7 @@ private:
     std::mt19937                                                         m_rngEngine;
     std::uniform_int_distribution<std::underlying_type_t<TetrominoType>> m_tetrominoDistribution;
 
+    TetrominoType              m_nextTetromino           = TetrominoType::O;
     std::unique_ptr<Tetromino> m_activeTetromino         = nullptr;
     double                     m_nextTetrominoActionTime = 1.0;
 
