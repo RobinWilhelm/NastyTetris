@@ -109,13 +109,37 @@ bool TetrisGameScene::check_collision( Direction dir ) const
     return false;
 }
 
+bool TetrisGameScene::check_collision_static( Orientation orientation ) const
+{
+    IE_ASSERT( m_activeTetromino != nullptr );
+
+    Orientation temp = m_activeTetromino->get_orientation();
+    m_activeTetromino->set_orientation( orientation );
+
+    bool collide = false;
+    for ( const Element& elem : m_activeTetromino->get_structure().Elements ) {
+        if ( elem.y >= get_field_height() || elem.x >= get_field_width() || elem.x < 0 ||    // check for collision with borders
+             m_gameField[elem.y * get_field_width() + elem.x].Active )                       // check for collision with field element directly
+        {
+            collide = true;
+            break;
+        }
+    }
+
+    m_activeTetromino->set_orientation( temp );
+    return collide;
+}
+
 void TetrisGameScene::fixed_update( double deltaTime )
 {
     // handle player input
     if ( m_activeTetromino != nullptr ) {
         if ( m_keyDown_R ) {
-            m_activeTetromino->rotate_once();
-            m_keyDown_R = false;
+            Orientation next = static_cast<Orientation>( ( static_cast<int>( m_activeTetromino->get_orientation() ) + 1 ) % 4 );
+            if ( check_collision_static( next ) == false ) {
+                m_activeTetromino->rotate_once();
+                m_keyDown_R = false;
+            }
         }
 
         if ( m_keyDown_A && !check_collision( Direction::Left ) ) {
@@ -138,7 +162,7 @@ void TetrisGameScene::fixed_update( double deltaTime )
     if ( m_nextTetrominoActionTime <= 0.0 ) {
         if ( m_activeTetromino == nullptr ) {
             // TODO create new random
-            TetrominoType newType = static_cast<TetrominoType>( m_tetrominoDistribution( m_rngEngine ) );
+            TetrominoType newType = TetrominoType::I;    // static_cast<TetrominoType>( m_tetrominoDistribution( m_rngEngine ) );
             m_activeTetromino     = std::make_unique<Tetromino>( newType, Orientation::Up, static_cast<uint16_t>( get_field_width() / 2 - 1 ), static_cast<uint16_t>( 1 ) );
         }
         else {
@@ -169,12 +193,9 @@ void TetrisGameScene::fixed_update( double deltaTime )
                         }
                     }
                     if ( completedRow ) {
-
-                        int width  = get_field_width();
-                        int height = get_field_height();
+                        int width = get_field_width();
 
                         for ( int x = 0; x < width; ++x ) {
-
                             RemovedElement relem;
                             relem.Color        = m_gameField[y * width + x].Color;
                             relem.PositionNext = DXSM::Vector2( get_element_x_coord( x ), get_element_y_coord( y ) );
@@ -183,8 +204,7 @@ void TetrisGameScene::fixed_update( double deltaTime )
                         }
 
                         // move all rows above down by one
-                        int offset = height - y;
-                        memcpy( &m_gameField[offset * width], &m_gameField[0], y * width * sizeof( FieldElement ) );
+                        memcpy( &m_gameField[width], &m_gameField[0], y * width * sizeof( FieldElement ) );
                         // TODO: player should got some points here
                     }
                 }

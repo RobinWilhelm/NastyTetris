@@ -47,10 +47,11 @@ public:
     void             rotate_once();
     void             set_orientation( Orientation orientation );
     void             move_one( Direction direction );
-    void             move_to_position( uint16_t x, uint16_t y );
+    void             move_to_position(int x, int y );
     TetrominoType    get_type();
     const Structure& get_structure();
-
+    Orientation      get_orientation();
+            
     static Structure   get_prototype_structure( TetrominoType type, Orientation orientation );
     static DXSM::Color get_color( TetrominoType type );
 
@@ -58,5 +59,5 @@ private:
     TetrominoType m_type        = TetrominoType::O;
     Orientation   m_orientation = Orientation::Up;
     Structure     m_structure   = {};
-    uint16_t      m_x = 0, m_y = 0;
+    int      m_x = 0, m_y = 0;
 };

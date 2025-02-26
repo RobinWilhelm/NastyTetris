@@ -50,6 +50,7 @@ public:
     float get_element_y_coord( int elem_y );
 
     bool check_collision( Direction dir ) const;
+    bool check_collision_static( Orientation orientation ) const;
 
 private:
     FieldElement* m_gameField       = nullptr;    // represents the playing field with all static pieces (not the currently active one)
