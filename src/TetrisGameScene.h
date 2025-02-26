@@ -18,6 +18,14 @@ struct FieldElement
     DXSM::Color Color  = { 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
+struct RemovedElement
+{
+    DXSM::Color   Color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    DXSM::Vector2 Position;
+    DXSM::Vector2 PositionNext;
+    DXSM::Vector2 Velocity;
+};
+
 class TetrisGameScene : public Scene
 {
 public:
@@ -32,20 +40,23 @@ public:
     void create_playingfield( uint16_t width = 10, uint16_t height = 20, uint16_t spawnAreaHeight = 4 );
     void destroy_playingfield();
 
-    uint16_t get_playingfield_width_in_elements() const;     // Width of GameField
-    uint16_t get_playingfield_height_in_elements() const;    // Height of GameField + Spawnarea
+    int get_field_width() const;     // Width of GameField in elements
+    int get_field_height() const;    // Height of GameField + Spawnarea in elements
 
-    uint16_t get_total_width_in_elements() const;     // Width of GameField + Borders
-    uint16_t get_total_height_in_elements() const;    // Height of GameField + Spawnarea + Borders
+    int get_total_width() const;     // Width of GameField + Borders in elements
+    int get_total_height() const;    // Height of GameField + Spawnarea + Borders in elements
+
+    float get_element_x_coord( int elem_x );
+    float get_element_y_coord( int elem_y );
 
     bool check_collision( Direction dir ) const;
 
 private:
     FieldElement* m_gameField       = nullptr;    // represents the playing field with all static pieces (not the currently active one)
-    uint16_t      m_fieldWidth      = 0;
-    uint16_t      m_fieldHeight     = 0;
-    uint16_t      m_spawnAreaHeight = 0;
-    uint16_t      m_borderThickness = 1;
+    int           m_fieldWidth      = 0;
+    int           m_fieldHeight     = 0;
+    int           m_spawnAreaHeight = 0;
+    int           m_borderThickness = 1;
 
     std::mt19937                                                         m_rngEngine;
     std::uniform_int_distribution<std::underlying_type_t<TetrominoType>> m_tetrominoDistribution;
@@ -59,4 +70,7 @@ private:
     bool m_keyDown_R = false;
 
     AssetView<Sprite> m_tileSprite;
+
+    DXSM::Vector2               m_gravityAccel = { 0.0f, 600.0f };
+    std::vector<RemovedElement> m_removedElements;
 };

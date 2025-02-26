@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "Sprite2DPipeline.h"
 #include "AssetManager.h"
+#include "Window.h"
 
 TetrisGameScene::TetrisGameScene()
 {
@@ -41,24 +42,34 @@ void TetrisGameScene::destroy_playingfield()
     delete[] m_gameField;
 }
 
-uint16_t TetrisGameScene::get_playingfield_width_in_elements() const
+int TetrisGameScene::get_field_width() const
 {
     return m_fieldWidth;
 }
 
-uint16_t TetrisGameScene::get_playingfield_height_in_elements() const
+int TetrisGameScene::get_field_height() const
 {
     return m_fieldHeight + m_spawnAreaHeight;
 }
 
-uint16_t TetrisGameScene::get_total_width_in_elements() const
+int TetrisGameScene::get_total_width() const
 {
     return m_fieldWidth + 2 * m_borderThickness;
 }
 
-uint16_t TetrisGameScene::get_total_height_in_elements() const
+int TetrisGameScene::get_total_height() const
 {
     return m_fieldHeight + m_spawnAreaHeight + 2 * m_borderThickness;
+}
+
+float TetrisGameScene::get_element_x_coord( int elem_x )
+{
+    return static_cast<float>( ( elem_x + m_borderThickness ) * m_tileSprite.get()->get_width() );
+}
+
+float TetrisGameScene::get_element_y_coord( int elem_y )
+{
+    return static_cast<float>( ( elem_y + m_borderThickness ) * m_tileSprite.get()->get_height() );
 }
 
 bool TetrisGameScene::check_collision( Direction dir ) const
@@ -67,9 +78,8 @@ bool TetrisGameScene::check_collision( Direction dir ) const
         switch ( dir ) {
         case Direction::Down:
         {
-            if ( elem.y + 1 >= get_playingfield_height_in_elements() ||    // check for collision with south border
-                 ( elem.y + 1 < get_playingfield_height_in_elements() &&
-                   m_gameField[( elem.y + 1 ) * get_playingfield_width_in_elements() + elem.x].Active ) )    // check for collision with field element directly underneath
+            if ( elem.y + 1 >= get_field_height() ||                                                                         // check for collision with south border
+                 ( elem.y + 1 < get_field_height() && m_gameField[( elem.y + 1 ) * get_field_width() + elem.x].Active ) )    // check for collision with field element directly underneath
             {
                 return true;
             }
@@ -77,8 +87,8 @@ bool TetrisGameScene::check_collision( Direction dir ) const
         }
         case Direction::Left:
         {
-            if ( elem.x - 1 < 0 ||                                                                                         // check for collision with left border
-                 ( elem.x - 1 > 0 && m_gameField[elem.y * get_playingfield_width_in_elements() + elem.x - 1].Active ) )    // check for collision with field element on the left
+            if ( elem.x - 1 < 0 ||                                                                      // check for collision with left border
+                 ( elem.x - 1 > 0 && m_gameField[elem.y * get_field_width() + elem.x - 1].Active ) )    // check for collision with field element on the left
             {
                 return true;
             }
@@ -86,9 +96,8 @@ bool TetrisGameScene::check_collision( Direction dir ) const
         }
         case Direction::Right:
         {
-            if ( elem.x + 1 >= get_playingfield_width_in_elements() ||    // check for collision with left border
-                 ( elem.x + 1 < get_playingfield_width_in_elements() &&
-                   m_gameField[elem.y * get_playingfield_width_in_elements() + elem.x + 1].Active ) )    // check for collision with field element on the left
+            if ( elem.x + 1 >= get_field_width() ||                                                                     // check for collision with left border
+                 ( elem.x + 1 < get_field_width() && m_gameField[elem.y * get_field_width() + elem.x + 1].Active ) )    // check for collision with field element on the left
             {
                 return true;
             }
@@ -130,13 +139,13 @@ void TetrisGameScene::fixed_update( double deltaTime )
         if ( m_activeTetromino == nullptr ) {
             // TODO create new random
             TetrominoType newType = static_cast<TetrominoType>( m_tetrominoDistribution( m_rngEngine ) );
-            m_activeTetromino     = std::make_unique<Tetromino>( newType, Orientation::Up, static_cast<uint16_t>( get_playingfield_width_in_elements() / 2 - 1 ), static_cast<uint16_t>( 1 ) );
+            m_activeTetromino     = std::make_unique<Tetromino>( newType, Orientation::Up, static_cast<uint16_t>( get_field_width() / 2 - 1 ), static_cast<uint16_t>( 1 ) );
         }
         else {
             // fuse tetromino to the playing field if we collided
             if ( check_collision( Direction::Down ) ) {
                 for ( const Element& elem : m_activeTetromino->get_structure().Elements ) {
-                    FieldElement& fieldElem = m_gameField[( elem.y * get_playingfield_width_in_elements() ) + elem.x];
+                    FieldElement& fieldElem = m_gameField[( elem.y * get_field_width() ) + elem.x];
                     fieldElem.Active        = true;
                     fieldElem.Color         = Tetromino::get_color( m_activeTetromino->get_type() );
 
@@ -151,23 +160,31 @@ void TetrisGameScene::fixed_update( double deltaTime )
                 m_activeTetromino.reset();
 
                 // check here if we completed a row
-                for ( int y = m_spawnAreaHeight; y < get_playingfield_height_in_elements(); ++y ) {
+                for ( int y = m_spawnAreaHeight; y < get_field_height(); ++y ) {
                     bool completedRow = true;
                     for ( int x = 0; x < m_fieldWidth; ++x ) {
-                        if ( m_gameField[( y * get_playingfield_width_in_elements() ) + x].Active == false ) {
+                        if ( m_gameField[( y * get_field_width() ) + x].Active == false ) {
                             completedRow = false;
                             break;
                         }
                     }
                     if ( completedRow ) {
-                        // loop over row again and deactivate it
-                        for ( int x = 0; x < m_fieldWidth; ++x ) {
-                            m_gameField[( y * get_playingfield_width_in_elements() ) + x].Active = false;
+
+                        int width  = get_field_width();
+                        int height = get_field_height();
+
+                        for ( int x = 0; x < width; ++x ) {
+
+                            RemovedElement relem;
+                            relem.Color        = m_gameField[y * width + x].Color;
+                            relem.PositionNext = DXSM::Vector2( get_element_x_coord( x ), get_element_y_coord( y ) );
+                            relem.Velocity     = DXSM::Vector2( static_cast<float>( ( x - 5 ) * ( 10 + SDL_rand( 10 ) ) ), static_cast<float>( -100 - SDL_rand( 100 ) ) );
+                            m_removedElements.push_back( relem );
                         }
 
                         // move all rows above down by one
-                        for ( int abov = m_spawnAreaHeight; y < get_playingfield_height_in_elements(); ++y ) { }
-
+                        int offset = height - y;
+                        memcpy( &m_gameField[offset * width], &m_gameField[0], y * width * sizeof( FieldElement ) );
                         // TODO: player should got some points here
                     }
                 }
@@ -178,36 +195,49 @@ void TetrisGameScene::fixed_update( double deltaTime )
         }
         m_nextTetrominoActionTime = 0.5f;
     }
+
+    // effects
+    [[maybe_unused]]
+    int min = 0 - m_tileSprite.get()->get_width();
+
+    auto elemIt = m_removedElements.begin();
+    while ( elemIt != m_removedElements.end() ) {
+        if ( elemIt->PositionNext.y > CoreAPI::get_application()->get_window()->get_height() || elemIt->PositionNext.x > CoreAPI::get_application()->get_window()->get_width() ||
+             elemIt->PositionNext.x < min ) {
+            elemIt = m_removedElements.erase( elemIt );
+            continue;
+        }
+        elemIt->Position = elemIt->PositionNext;
+        elemIt->PositionNext += elemIt->Velocity * deltaTime;
+        elemIt->Velocity += m_gravityAccel * deltaTime;
+        ++elemIt;
+    }
 }
 
-void TetrisGameScene::interpolate_and_create_rendercommands( float factor, GPURenderer* pRenderer )
+void TetrisGameScene::interpolate_and_create_rendercommands( float interpFactor, GPURenderer* pRenderer )
 {
-    // actually no interpolation right now as default Tetris has no smooth movements
-    (void)factor;
     (void)pRenderer;
 
     const std::shared_ptr<Sprite> sprite = m_tileSprite.get();
 
     // render playing field borders
     DXSM::Color borderColorModifier { 0.8f, 0.8f, 0.8f, 1.0f };
-    for ( int x = 1; x < get_total_width_in_elements() - 1; x++ ) {
+    for ( int x = 1; x < get_total_width() - 1; x++ ) {
         sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), 0.0f, borderColorModifier );
-        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), static_cast<float>( ( get_total_height_in_elements() - 1 ) * m_tileSprite.get()->get_height() ),
-                        borderColorModifier );
+        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), static_cast<float>( ( get_total_height() - 1 ) * m_tileSprite.get()->get_height() ), borderColorModifier );
     }
 
-    for ( int y = 0; y < get_total_height_in_elements(); y++ ) {
+    for ( int y = 0; y < get_total_height(); y++ ) {
         sprite->render( 0.0f, static_cast<float>( y * m_tileSprite.get()->get_height() ), borderColorModifier );
-        sprite->render( static_cast<float>( ( get_total_width_in_elements() - 1 ) * m_tileSprite.get()->get_width() ), static_cast<float>( y * m_tileSprite.get()->get_height() ),
-                        borderColorModifier );
+        sprite->render( static_cast<float>( ( get_total_width() - 1 ) * m_tileSprite.get()->get_width() ), static_cast<float>( y * m_tileSprite.get()->get_height() ), borderColorModifier );
     }
 
     // render static elements
-    for ( int y = 0; y < get_playingfield_height_in_elements(); y++ ) {
-        for ( int x = 0; x < get_playingfield_width_in_elements(); x++ ) {
-            if ( m_gameField[y * get_playingfield_width_in_elements() + x].Active ) {
+    for ( int y = 0; y < get_field_height(); y++ ) {
+        for ( int x = 0; x < get_field_width(); x++ ) {
+            if ( m_gameField[y * get_field_width() + x].Active ) {
                 sprite->render( static_cast<float>( ( x + m_borderThickness ) * m_tileSprite.get()->get_width() ), static_cast<float>( ( y + m_borderThickness ) * m_tileSprite.get()->get_height() ),
-                                m_gameField[y * get_playingfield_width_in_elements() + x].Color );
+                                m_gameField[y * get_field_width() + x].Color );
             }
         }
     }
@@ -218,6 +248,12 @@ void TetrisGameScene::interpolate_and_create_rendercommands( float factor, GPURe
             sprite->render( static_cast<float>( ( elem.x + m_borderThickness ) * m_tileSprite.get()->get_width() ),
                             static_cast<float>( ( elem.y + m_borderThickness ) * m_tileSprite.get()->get_height() ), Tetromino::get_color( m_activeTetromino->get_type() ) );
         }
+    }
+
+    // render effects
+    for ( const auto& elem : m_removedElements ) {
+        DXSM::Vector2 interpolated = DXSM::Vector2::Lerp( elem.Position, elem.PositionNext, interpFactor );
+        sprite->render( static_cast<float>( interpolated.x ), static_cast<float>( interpolated.y ), elem.Color );
     }
 }
 
