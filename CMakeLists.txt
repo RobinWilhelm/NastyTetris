@@ -98,9 +98,6 @@ set(DIRECTXTK_INCLUDE_DIRS "extern/directxtk")
 set(SDL3_INCLUDE_DIRS "extern/SDL3/include")
 set(SDL3_BUILD "extern/SDL3/build")
 
-set(SDL3_INCLUDE_DIRS "extern/SDL3/include")
-set(SDL3_BUILD "extern/SDL3/build")
-
 set(SDL3_IMAGE_INCLUDE_DIRS "extern/SDL3_image/include")
 set(SDL3_IMAGE_BUILD "extern/SDL3_image/build")
 

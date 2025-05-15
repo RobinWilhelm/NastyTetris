@@ -151,28 +151,23 @@ void TetrisGameScene::render_field()
     const std::shared_ptr<Sprite> sprite = m_tileSprite.get();
 
     // render playing field borders
-    DXSM::Color borderColorModifier{0.8f, 0.8f, 0.8f, 1.0f};
-    for (int x = 1; x < get_total_width() - 1; x++)
-    {
-        sprite->render(static_cast<float>(x * m_tileSprite.get()->get_width()), 0.0f, borderColorModifier);
-        sprite->render(static_cast<float>(x * m_tileSprite.get()->get_width()), static_cast<float>((get_total_height() - 1) * m_tileSprite.get()->get_height()), borderColorModifier);
+    DXSM::Color borderColorModifier { 0.8f, 0.8f, 0.8f, 1.0f };
+    for ( int x = 1; x < get_total_width() - 1; x++ ) {
+        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), 0.0f, borderColorModifier );
+        sprite->render( static_cast<float>( x * m_tileSprite.get()->get_width() ), static_cast<float>( ( get_total_height() - 1 ) * m_tileSprite.get()->get_height() ), borderColorModifier );
     }
 
-    for (int y = 0; y < get_total_height(); y++)
-    {
-        sprite->render(0.0f, static_cast<float>(y * m_tileSprite.get()->get_height()), borderColorModifier);
-        sprite->render(static_cast<float>((get_total_width() - 1) * m_tileSprite.get()->get_width()), static_cast<float>(y * m_tileSprite.get()->get_height()), borderColorModifier);
+    for ( int y = 0; y < get_total_height(); y++ ) {
+        sprite->render( 0.0f, static_cast<float>( y * m_tileSprite.get()->get_height() ), borderColorModifier );
+        sprite->render( static_cast<float>( ( get_total_width() - 1 ) * m_tileSprite.get()->get_width() ), static_cast<float>( y * m_tileSprite.get()->get_height() ), borderColorModifier );
     }
 
     // render static elements
-    for (int y = 0; y < get_field_height(); y++)
-    {
-        for (int x = 0; x < get_field_width(); x++)
-        {
-            if (m_gameField[y * get_field_width() + x].Active)
-            {
-                sprite->render(static_cast<float>((x + m_borderThickness) * m_tileSprite.get()->get_width()), static_cast<float>((y + m_borderThickness) * m_tileSprite.get()->get_height()),
-                                m_gameField[y * get_field_width() + x].Color);
+    for ( int y = 0; y < get_field_height(); y++ ) {
+        for ( int x = 0; x < get_field_width(); x++ ) {
+            if ( m_gameField[y * get_field_width() + x].Active ) {
+                sprite->render( static_cast<float>( ( x + m_borderThickness ) * m_tileSprite.get()->get_width() ), static_cast<float>( ( y + m_borderThickness ) * m_tileSprite.get()->get_height() ),
+                                m_gameField[y * get_field_width() + x].Color );
             }
         }
     }
@@ -305,7 +300,7 @@ void TetrisGameScene::interpolate_and_create_rendercommands( float interpFactor,
         sprite->render( static_cast<float>( ( elem.x + get_total_width() + 2 ) * m_tileSprite.get()->get_width() ), static_cast<float>( ( elem.y + 4 ) * m_tileSprite.get()->get_height() ),
                         Tetromino::get_color( m_nextTetromino ) );
     }
-            
+
     if ( m_activeTetromino ) {
         for ( const Element& elem : m_activeTetromino->get_structure().Elements ) {
             sprite->render( static_cast<float>( ( elem.x + m_borderThickness ) * m_tileSprite.get()->get_width() ),
